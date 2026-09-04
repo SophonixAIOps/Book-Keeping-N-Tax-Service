@@ -437,6 +437,70 @@ for (const [width, expected] of [
   await context.close();
 }
 
+/* --- about page structure and CTA routing --- */
+{
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+  await page.goto(BASE + "/about", { waitUntil: "networkidle" });
+
+  const h1s = await page.locator("main h1").allInnerTexts();
+  if (h1s.length !== 1) problems.push(`about: ${h1s.length} h1 elements, expected 1`);
+
+  const levels = await page.evaluate(() =>
+    [...document.querySelectorAll("main h1, main h2, main h3, main h4")].map((el) =>
+      Number(el.tagName[1]),
+    ),
+  );
+  for (let i = 1; i < levels.length; i++)
+    if (levels[i] - levels[i - 1] > 1)
+      problems.push(`about: heading jumps h${levels[i - 1]} -> h${levels[i]}`);
+
+  const sections = await page.locator("main > section").count();
+  if (sections !== 8) problems.push(`about: ${sections} sections, expected 8`);
+
+  const hrefs = await page.evaluate(() =>
+    [...document.querySelectorAll("main a")].map((a) => a.getAttribute("href")),
+  );
+  const allowedRoutes = new Set(["/", "/services", "/about", "/contact"]);
+  const badHrefs = [...new Set(hrefs)].filter(
+    (h) => !h.startsWith("#") && !allowedRoutes.has(h.replace(/#.*$/, "")),
+  );
+  if (badHrefs.length)
+    problems.push(`about: unexpected link targets ${badHrefs.join(", ")}`);
+
+  const emptyNames = await page.evaluate(
+    () =>
+      [...document.querySelectorAll("main a")].filter(
+        (a) => !(a.innerText.trim() || a.getAttribute("aria-label")),
+      ).length,
+  );
+  if (emptyNames) problems.push(`about: ${emptyNames} link(s) with no accessible name`);
+
+  // the page must reach /contact and /services from its own body copy
+  const routed = new Set(hrefs.map((h) => h.replace(/#.*$/, "")));
+  for (const route of ["/contact", "/services"])
+    if (!routed.has(route)) problems.push(`about: no link to ${route}`);
+
+  // no invented credentials, counts or figures may appear on this page
+  const bodyText = await page.locator("main").innerText();
+  const forbidden = [
+    /\bCPA\b/,
+    /\bcertified\b/i,
+    /\baward/i,
+    /\b\d+\+?\s*(years|clients|customers)\b/i,
+    /\$\s?\d/,
+    /\b\d{1,3}%/,
+  ];
+  for (const pattern of forbidden)
+    if (pattern.test(bodyText))
+      problems.push(`about: unsupported claim matching ${pattern} in body copy`);
+
+  log(`about: 1 h1, ${sections} sections, ${hrefs.length} links all routable`);
+  await context.close();
+}
+
 /* --- reduced motion must leave content visible --- */
 {
   const context = await browser.newContext({
@@ -494,8 +558,9 @@ for (const [width, expected] of [
     viewport: { width: 1280, height: 900 },
   });
   const page = await context.newPage();
-  // /services is captured by the stills loop below, which walks it first.
-  for (const route of ["/about", "/contact"]) {
+  // /services and /about are captured by the stills loop below, which walks
+  // them first so their Reveal blocks are no longer transparent.
+  for (const route of ["/contact"]) {
     await page.goto(BASE + route, { waitUntil: "networkidle" });
     await page.screenshot({
       path: `${SHOTS}${route.slice(1)}-1280.png`,
@@ -509,6 +574,7 @@ for (const [width, expected] of [
 for (const [route, name, stillWidths] of [
   ["/", "home", [360, 390, 768, 1024, 1280, 1440]],
   ["/services", "services", [360, 390, 430, 768, 1024, 1280, 1440]],
+  ["/about", "about", [360, 375, 390, 430, 768, 1024, 1280, 1440]],
 ]) {
   for (const width of stillWidths) {
     const context = await browser.newContext({

@@ -501,6 +501,190 @@ for (const [width, expected] of [
   await context.close();
 }
 
+/* --- contact page structure, consultation form and honest demo state --- */
+{
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+  });
+  const page = await context.newPage();
+  await page.goto(BASE + "/contact", { waitUntil: "networkidle" });
+
+  const h1s = await page.locator("main h1").allInnerTexts();
+  if (h1s.length !== 1) problems.push(`contact: ${h1s.length} h1 elements, expected 1`);
+
+  const levels = await page.evaluate(() =>
+    [...document.querySelectorAll("main h1, main h2, main h3, main h4")].map((el) =>
+      Number(el.tagName[1]),
+    ),
+  );
+  for (let i = 1; i < levels.length; i++)
+    if (levels[i] - levels[i - 1] > 1)
+      problems.push(`contact: heading jumps h${levels[i - 1]} -> h${levels[i]}`);
+
+  const sections = await page.locator("main > section").count();
+  if (sections !== 5) problems.push(`contact: ${sections} sections, expected 5`);
+
+  // every control must have a real label, and nothing may describe a missing id
+  const formIssues = await page.evaluate(() => {
+    const controls = [...document.querySelectorAll("main input, main select, main textarea")];
+    const unlabelled = controls.filter(
+      (el) => !document.querySelector(`label[for="${el.id}"]`),
+    ).length;
+    const broken = [...document.querySelectorAll("main [aria-describedby]")].filter((el) =>
+      el
+        .getAttribute("aria-describedby")
+        .split(/\s+/)
+        .some((id) => !document.getElementById(id)),
+    ).length;
+    const short = controls.filter(
+      (el) => el.tagName !== "TEXTAREA" && el.getBoundingClientRect().height < 44,
+    ).length;
+    return { count: controls.length, unlabelled, broken, short };
+  });
+  if (formIssues.count !== 8)
+    problems.push(`contact: ${formIssues.count} form controls, expected 8`);
+  if (formIssues.unlabelled)
+    problems.push(`contact: ${formIssues.unlabelled} control(s) with no label`);
+  if (formIssues.broken)
+    problems.push(`contact: ${formIssues.broken} broken aria-describedby reference(s)`);
+  if (formIssues.short)
+    problems.push(`contact: ${formIssues.short} control(s) under the 44px touch target`);
+
+  // submitting empty must flag the required fields rather than silently pass
+  await page.locator('main button[type="submit"]').click();
+  await page.waitForTimeout(200);
+  const invalidCount = await page.locator("main [aria-invalid='true']").count();
+  if (invalidCount !== 3)
+    problems.push(`contact: empty submit flagged ${invalidCount} fields, expected 3`);
+  const focused = await page.evaluate(() => document.activeElement?.id);
+  if (focused !== "inquiry-name")
+    problems.push(`contact: focus not moved to first invalid field (got ${focused})`);
+
+  // a successful submit must not claim the inquiry was delivered
+  await page.fill("#inquiry-name", "Test Person");
+  await page.fill("#inquiry-email", "test@example.com");
+  await page.fill("#inquiry-message", "Checking the demo state.");
+  await page.locator('main button[type="submit"]').click();
+  await page.waitForTimeout(200);
+  const confirmation = await page.locator("main [role='status']").innerText();
+  if (!/demonstration/i.test(confirmation))
+    problems.push("contact: submit confirmation does not disclose the demo state");
+  // Delivery verbs are fine inside a negated clause ("nothing was sent"), so the
+  // check runs per clause rather than over the whole string.
+  const impliesDelivery = confirmation
+    .split(/[.,;]/)
+    .some(
+      (clause) =>
+        /\b(sent|received|submitted|delivered|in touch)\b/i.test(clause) &&
+        !/\b(not|no|nothing|never)\b/i.test(clause),
+    );
+  if (impliesDelivery)
+    problems.push(`contact: confirmation implies delivery :: ${confirmation}`);
+
+  await page.reload({ waitUntil: "networkidle" });
+
+  const hrefs = await page.evaluate(() =>
+    [...document.querySelectorAll("main a")].map((a) => a.getAttribute("href")),
+  );
+  const allowedRoutes = new Set(["/", "/services", "/about", "/contact"]);
+  const badHrefs = [...new Set(hrefs)].filter(
+    (h) => !h.startsWith("#") && !allowedRoutes.has(h.replace(/#.*$/, "")),
+  );
+  if (badHrefs.length)
+    problems.push(`contact: unexpected link targets ${badHrefs.join(", ")}`);
+  if (!hrefs.some((h) => h.replace(/#.*$/, "") === "/services"))
+    problems.push("contact: no link to /services");
+
+  const emptyNames = await page.evaluate(
+    () =>
+      [...document.querySelectorAll("main a")].filter(
+        (a) => !(a.innerText.trim() || a.getAttribute("aria-label")),
+      ).length,
+  );
+  if (emptyNames) problems.push(`contact: ${emptyNames} link(s) with no accessible name`);
+
+  // no credentials, and no response-time or outcome promise
+  const bodyText = await page.locator("main").innerText();
+  const forbidden = [
+    /\bCPA\b/,
+    /\bcertified\b/i,
+    /\baward/i,
+    /\bguarantee/i,
+    /\bfree consultation/i,
+    /within \d+ (business )?(hour|day)/i,
+    /\b\d+\+?\s*(years|clients|customers)\b/i,
+    /\$\s?\d/,
+    /\b\d{1,3}%/,
+  ];
+  for (const pattern of forbidden)
+    if (pattern.test(bodyText))
+      problems.push(`contact: unsupported claim matching ${pattern} in body copy`);
+
+  log(
+    `contact: 1 h1, ${sections} sections, ${formIssues.count} labelled controls, demo state honest`,
+  );
+  await context.close();
+}
+
+/* --- contact form geometry across the widths the brief asks to be reviewed --- */
+for (const width of [360, 375, 390, 430, 768, 1024]) {
+  const context = await browser.newContext({ viewport: { width, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(BASE + "/contact", { waitUntil: "networkidle" });
+
+  const geometry = await page.evaluate(() => {
+    const controls = [
+      ...document.querySelectorAll("main input, main select, main textarea"),
+    ];
+    const rects = controls.map((el) => el.getBoundingClientRect());
+    const widest = Math.max(...rects.map((r) => r.width));
+    const card = document
+      .querySelector("main form")
+      .closest("div.rounded-md")
+      .getBoundingClientRect();
+    return {
+      columns: new Set(rects.map((r) => Math.round(r.left))).size,
+      ragged: rects.filter((r) => r.width < widest / 2.2).length,
+      overflow: rects.filter((r) => r.right > card.right + 1).length,
+      short: rects.filter(
+        (r, i) => controls[i].tagName !== "TEXTAREA" && r.height < 44,
+      ).length,
+      textarea: Math.round(
+        rects[controls.findIndex((el) => el.tagName === "TEXTAREA")].height,
+      ),
+    };
+  });
+
+  // below sm the grid must collapse to one column of full-width fields
+  const expected = width < 640 ? 1 : 2;
+  if (geometry.columns !== expected)
+    problems.push(
+      `contact @${width}: form uses ${geometry.columns} column(s), expected ${expected}`,
+    );
+  if (geometry.ragged)
+    problems.push(`contact @${width}: ${geometry.ragged} control(s) not filling their column`);
+  if (geometry.overflow)
+    problems.push(`contact @${width}: ${geometry.overflow} control(s) overflow the card`);
+  if (geometry.short)
+    problems.push(`contact @${width}: ${geometry.short} control(s) under 44px`);
+  if (geometry.textarea < 120)
+    problems.push(`contact @${width}: textarea only ${geometry.textarea}px tall`);
+
+  // the form must be reachable before the direct-contact block on a phone
+  const formFirst = await page.evaluate(() => {
+    const form = document.querySelector("main form");
+    const direct = [...document.querySelectorAll("main h3")].find((h) =>
+      h.textContent.includes("Prefer to Reach Out"),
+    );
+    return form.getBoundingClientRect().top < direct.getBoundingClientRect().top;
+  });
+  if (width < 1024 && !formFirst)
+    problems.push(`contact @${width}: direct-contact block sits above the form`);
+
+  await context.close();
+}
+log("contact form: one column under sm, full-width fields, form ahead of direct contact");
+
 /* --- reduced motion must leave content visible --- */
 {
   const context = await browser.newContext({
@@ -552,29 +736,12 @@ for (const [width, expected] of [
   await context.close();
 }
 
-/* --- reference screenshots --- */
-{
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 900 },
-  });
-  const page = await context.newPage();
-  // /services and /about are captured by the stills loop below, which walks
-  // them first so their Reveal blocks are no longer transparent.
-  for (const route of ["/contact"]) {
-    await page.goto(BASE + route, { waitUntil: "networkidle" });
-    await page.screenshot({
-      path: `${SHOTS}${route.slice(1)}-1280.png`,
-      fullPage: true,
-    });
-  }
-  await context.close();
-}
-
 /* --- stills at every width the brief asks to be reviewed --- */
 for (const [route, name, stillWidths] of [
   ["/", "home", [360, 390, 768, 1024, 1280, 1440]],
   ["/services", "services", [360, 390, 430, 768, 1024, 1280, 1440]],
   ["/about", "about", [360, 375, 390, 430, 768, 1024, 1280, 1440]],
+  ["/contact", "contact", [360, 375, 390, 430, 768, 1024, 1280, 1440]],
 ]) {
   for (const width of stillWidths) {
     const context = await browser.newContext({
@@ -585,10 +752,21 @@ for (const [route, name, stillWidths] of [
     // Reveal blocks only unhide once observed, so walk the page before capturing.
     // `behavior: "instant"` is required: globals.css sets scroll-behavior: smooth,
     // which would otherwise animate (and cancel) each scripted jump.
+    // Observations are delivered per frame, so a step the renderer coalesces away
+    // is never seen again once we return to the top — hence walking until settled.
     await page.evaluate(async () => {
-      for (let y = 0; y < document.documentElement.scrollHeight; y += 400) {
-        window.scrollTo({ top: y, behavior: "instant" });
-        await new Promise((r) => setTimeout(r, 60));
+      const settled = () =>
+        [...document.querySelectorAll(".reveal")].every(
+          (e) => e.getAttribute("data-revealed") === "true",
+        );
+      for (let pass = 0; pass < 4 && !settled(); pass++) {
+        for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
+          window.scrollTo({ top: y, behavior: "instant" });
+          await new Promise((r) =>
+            requestAnimationFrame(() => requestAnimationFrame(r)),
+          );
+          await new Promise((r) => setTimeout(r, 40));
+        }
       }
       window.scrollTo({ top: 0, behavior: "instant" });
     });

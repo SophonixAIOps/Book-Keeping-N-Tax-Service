@@ -45,6 +45,9 @@ export function Select({
 type FieldProps = {
   label: string;
   htmlFor: string;
+  /** Marks the control as not required. An enquiry form is mostly optional
+      fields, so the marker sits on those rather than on the required few. */
+  optional?: boolean;
   hint?: string;
   error?: string;
   children: React.ReactNode;
@@ -56,6 +59,7 @@ type FieldProps = {
 export function Field({
   label,
   htmlFor,
+  optional = false,
   hint,
   error,
   children,
@@ -63,7 +67,14 @@ export function Field({
 }: FieldProps) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor}>
+        {label}
+        {optional && (
+          <span className="ml-2 text-caption font-normal text-ink-tertiary">
+            Optional
+          </span>
+        )}
+      </Label>
       {hint && (
         <p id={`${htmlFor}-hint`} className="text-caption text-ink-tertiary">
           {hint}

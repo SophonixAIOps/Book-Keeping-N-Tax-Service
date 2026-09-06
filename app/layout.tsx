@@ -3,6 +3,7 @@ import { Inter, Instrument_Serif } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { siteConfig } from "@/lib/site-config";
+import { siteTitle, siteUrl } from "@/lib/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,12 +19,13 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-/* `metadataBase` and social images are deliberately absent: this demo has no
-   canonical domain yet, and inventing one would put a fictional URL in the
-   markup. */
+/* Social images are deliberately absent, and `metadataBase` only appears once
+   `NEXT_PUBLIC_SITE_URL` is supplied at build time: this demo has no canonical
+   domain yet, and inventing one would put a fictional URL in the markup. */
 export const metadata: Metadata = {
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
-    default: `${siteConfig.legalName} — Bookkeeping & Tax Services`,
+    default: siteTitle,
     template: `%s — ${siteConfig.legalName}`,
   },
   description: siteConfig.tagline,

@@ -736,6 +736,318 @@ log("contact form: one column under sm, full-width fields, form ahead of direct 
   await context.close();
 }
 
+/* --- metadata, crawl surfaces and site-wide claim integrity --- */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const publicRoutes = ["/", "/services", "/about", "/contact"];
+  const titles = new Map();
+  const descriptions = new Map();
+
+  for (const route of publicRoutes) {
+    await page.goto(BASE + route, { waitUntil: "networkidle" });
+
+    const meta = await page.evaluate(() => ({
+      title: document.title,
+      description:
+        document
+          .querySelector('meta[name="description"]')
+          ?.getAttribute("content") ?? "",
+      robots:
+        document.querySelector('meta[name="robots"]')?.getAttribute("content") ??
+        "",
+      canonical:
+        document.querySelector('link[rel="canonical"]')?.getAttribute("href") ??
+        "",
+      h1s: [...document.querySelectorAll("h1")].map((h) => h.innerText.trim()),
+      bodyText: document.body.innerText,
+    }));
+
+    if (!meta.title) problems.push(`${route}: no title`);
+    if (meta.title.length > 65)
+      problems.push(`${route}: title ${meta.title.length} chars, over 65`);
+    if (!meta.description) problems.push(`${route}: no meta description`);
+    if (meta.description.length > 165)
+      problems.push(
+        `${route}: description ${meta.description.length} chars, over 165`,
+      );
+    if (meta.description === meta.title)
+      problems.push(`${route}: description merely repeats the title`);
+    if (meta.h1s.length !== 1)
+      problems.push(`${route}: ${meta.h1s.length} h1 elements, expected 1`);
+    if (/noindex/.test(meta.robots))
+      problems.push(`${route}: public page is noindex`);
+
+    // No origin is configured in this environment, so Next must not fall back
+    // to a localhost canonical — that would be an actively wrong signal.
+    if (meta.canonical && /localhost|127\.0\.0\.1/.test(meta.canonical))
+      problems.push(`${route}: canonical points at ${meta.canonical}`);
+
+    if (titles.has(meta.title))
+      problems.push(
+        `${route}: title duplicates ${titles.get(meta.title)} :: ${meta.title}`,
+      );
+    titles.set(meta.title, route);
+
+    if (descriptions.has(meta.description))
+      problems.push(
+        `${route}: description duplicates ${descriptions.get(meta.description)}`,
+      );
+    descriptions.set(meta.description, route);
+
+    // Whole document, header and footer included — the service-area
+    // placeholder and the response-time promise both lived outside <main>.
+    const forbiddenSiteWide = [
+      /to be confirmed/i,
+      /within \d+ (business )?(hour|day)/i,
+      /\bnear me\b/i,
+      // Superiority claims only. Bare "best" is left alone: the copy uses it
+      // adverbially ("works best when", "best support you"), which asserts
+      // nothing about ranking.
+      /\bthe best\b/i,
+      /\bbest\s+(accounting|bookkeeping|tax|payroll|firm|service)/i,
+      /\btop[- ]rated\b/i,
+      /#\s?1\b/,
+      /\bnumber one\b/i,
+      /\bguarantee/i,
+      /\bCPA\b/,
+      /\bcertified\b/i,
+    ];
+    for (const pattern of forbiddenSiteWide)
+      if (pattern.test(meta.bodyText))
+        problems.push(`${route}: unsupported or stuffed copy matching ${pattern}`);
+  }
+  log(
+    `metadata: ${publicRoutes.length} public routes, unique titles and descriptions, 1 h1 each`,
+  );
+
+  // the specimen route must stay out of search
+  await page.goto(BASE + "/design-system", { waitUntil: "networkidle" });
+  const dsRobots = await page.evaluate(
+    () =>
+      document.querySelector('meta[name="robots"]')?.getAttribute("content") ??
+      "",
+  );
+  if (!/noindex/.test(dsRobots))
+    problems.push(`design-system: robots "${dsRobots}", expected noindex`);
+
+  const sitemap = await (await page.request.get(BASE + "/sitemap.xml")).text();
+  const locs = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
+  if (locs.length !== publicRoutes.length)
+    problems.push(`sitemap: ${locs.length} urls, expected ${publicRoutes.length}`);
+  for (const route of publicRoutes)
+    if (!locs.some((loc) => loc === route || loc.endsWith(route)))
+      problems.push(`sitemap: missing ${route}`);
+  if (locs.some((loc) => /design-system/.test(loc)))
+    problems.push("sitemap: includes /design-system");
+
+  const robotsTxt = await (await page.request.get(BASE + "/robots.txt")).text();
+  if (!/Allow:\s*\/\s*$/m.test(robotsTxt))
+    problems.push("robots.txt: does not allow /");
+  if (!/Disallow:\s*\/design-system/m.test(robotsTxt))
+    problems.push("robots.txt: does not disallow /design-system");
+  for (const route of publicRoutes.slice(1))
+    if (new RegExp(`Disallow:\\s*${route}\\s*$`, "m").test(robotsTxt))
+      problems.push(`robots.txt: blocks ${route}`);
+
+  log(
+    `crawl surfaces: sitemap ${locs.length} public urls, design-system noindex + disallowed`,
+  );
+  await context.close();
+}
+
+/* --- structured data --- */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const publicRoutes = ["/", "/services", "/about", "/contact"];
+
+  const expectedPageType = {
+    "/": "WebPage",
+    "/services": "CollectionPage",
+    "/about": "AboutPage",
+    "/contact": "ContactPage",
+  };
+  const expectedServices = [
+    "Monthly Bookkeeping",
+    "Tax Preparation",
+    "Payroll Support",
+    "Business Accounting",
+    "Financial Reporting",
+    "Catch-Up Bookkeeping",
+  ];
+
+  // ClearLedger has no premises, reputation or credentials. These properties
+  // would each assert one, so none may appear at any depth of the graph — a
+  // fabricated address is no more acceptable to a parser than to a reader.
+  const forbiddenKeys = [
+    "address", "streetAddress", "addressLocality", "addressRegion",
+    "postalCode", "addressCountry", "areaServed", "serviceArea", "location",
+    "geo", "latitude", "longitude", "hasMap",
+    "aggregateRating", "ratingValue", "reviewCount", "review", "rating",
+    "award", "hasCredential", "foundingDate", "numberOfEmployees",
+    "priceRange", "offers", "price", "paymentAccepted",
+    "openingHours", "openingHoursSpecification",
+    "logo", "image", "sameAs", "founder", "employee", "owner",
+  ];
+  // `LocalBusiness` and its subtypes are excluded on purpose: they assert a
+  // physical place of business that does not exist.
+  const forbiddenTypes = [
+    "BreadcrumbList", "ListItem", "FAQPage", "Question", "Answer",
+    "Review", "AggregateRating", "LocalBusiness", "AccountingService",
+    "ProfessionalService", "Person", "PostalAddress", "Place", "SearchAction",
+  ];
+
+  for (const route of publicRoutes) {
+    await page.goto(BASE + route, { waitUntil: "networkidle" });
+
+    const found = await page.evaluate(() => ({
+      blocks: [
+        ...document.querySelectorAll('script[type="application/ld+json"]'),
+      ].map((s) => s.textContent ?? ""),
+      title: document.title,
+      description:
+        document
+          .querySelector('meta[name="description"]')
+          ?.getAttribute("content") ?? "",
+    }));
+
+    if (found.blocks.length !== 1) {
+      problems.push(
+        `${route}: ${found.blocks.length} ld+json blocks, expected 1`,
+      );
+      continue;
+    }
+
+    let doc;
+    try {
+      doc = JSON.parse(found.blocks[0]);
+    } catch (error) {
+      problems.push(`${route}: ld+json does not parse — ${error.message}`);
+      continue;
+    }
+
+    if (doc["@context"] !== "https://schema.org")
+      problems.push(`${route}: @context is "${doc["@context"]}"`);
+    const nodes = doc["@graph"];
+    if (!Array.isArray(nodes) || nodes.length === 0) {
+      problems.push(`${route}: @graph is missing or empty`);
+      continue;
+    }
+
+    const ids = nodes.map((node) => node["@id"]);
+    const refs = [];
+
+    const walk = (value, path) => {
+      if (Array.isArray(value))
+        return value.forEach((item, i) => walk(item, `${path}[${i}]`));
+      if (!value || typeof value !== "object") return;
+
+      for (const [key, child] of Object.entries(value)) {
+        if (forbiddenKeys.includes(key))
+          problems.push(
+            `${route}: schema asserts unverifiable "${key}" at ${path}`,
+          );
+        if (key === "@type")
+          for (const type of Array.isArray(child) ? child : [child])
+            if (forbiddenTypes.includes(type))
+              problems.push(`${route}: schema uses forbidden @type "${type}"`);
+        if ((key === "@id" || key === "url") && typeof child === "string")
+          if (
+            !/^(https?:\/\/|\/)/.test(child) ||
+            /undefined|localhost|127\.0\.0\.1|example\.com/.test(child)
+          )
+            problems.push(`${route}: unusable schema URL "${child}"`);
+        walk(child, `${path}.${key}`);
+      }
+      // A node carrying only an @id is a pointer at another node, not a node.
+      if (value["@id"] && !value["@type"]) refs.push(value["@id"]);
+    };
+    walk(nodes, "@graph");
+
+    for (const ref of refs)
+      if (!ids.includes(ref))
+        problems.push(`${route}: reference to "${ref}" resolves to nothing`);
+    for (const id of ids)
+      if (ids.filter((other) => other === id).length > 1)
+        problems.push(`${route}: duplicate @id "${id}"`);
+
+    const orgs = nodes.filter((node) => node["@type"] === "Organization");
+    if (orgs.length !== 1)
+      problems.push(`${route}: ${orgs.length} Organization nodes, expected 1`);
+    const orgId = orgs[0]?.["@id"];
+
+    if (!nodes.some((node) => node["@type"] === "WebSite"))
+      problems.push(`${route}: no WebSite node`);
+
+    const pageNode = nodes.find(
+      (node) => node["@type"] === expectedPageType[route],
+    );
+    if (!pageNode) {
+      problems.push(`${route}: no ${expectedPageType[route]} node`);
+    } else {
+      if (pageNode.description !== found.description)
+        problems.push(
+          `${route}: schema description differs from the meta description`,
+        );
+      if (!found.title.startsWith(pageNode.name))
+        problems.push(
+          `${route}: schema name "${pageNode.name}" is not the page title`,
+        );
+      if (pageNode.url !== route && !String(pageNode.url).endsWith(route))
+        problems.push(`${route}: page node url is "${pageNode.url}"`);
+    }
+
+    const serviceNodes = nodes.filter((node) => node["@type"] === "Service");
+    if (route === "/services") {
+      if (serviceNodes.length !== expectedServices.length)
+        problems.push(
+          `/services: ${serviceNodes.length} Service nodes, expected ${expectedServices.length}`,
+        );
+      for (const name of expectedServices)
+        if (!serviceNodes.some((node) => node.name === name))
+          problems.push(`/services: no Service node named "${name}"`);
+      for (const node of serviceNodes) {
+        if (node.provider?.["@id"] !== orgId)
+          problems.push(
+            `/services: "${node.name}" provider does not point at the organization`,
+          );
+        if (!String(node["@id"]).includes("/services#"))
+          problems.push(
+            `/services: "${node.name}" @id "${node["@id"]}" is not the section anchor`,
+          );
+        if (!node.description)
+          problems.push(`/services: "${node.name}" has no description`);
+      }
+      // The site is careful to offer payroll record-keeping rather than
+      // payroll processing; the schema has to carry that same limit.
+      const payroll = serviceNodes.find((node) => node.name === "Payroll Support");
+      if (payroll && !/not operate as a payroll provider/i.test(payroll.description ?? ""))
+        problems.push(
+          "/services: Payroll Support schema drops the not-a-payroll-provider qualification",
+        );
+    } else if (serviceNodes.length) {
+      problems.push(
+        `${route}: ${serviceNodes.length} Service nodes outside /services`,
+      );
+    }
+  }
+
+  // The specimen route is noindex; it has nothing to describe to a crawler.
+  await page.goto(BASE + "/design-system", { waitUntil: "networkidle" });
+  const dsBlocks = await page.evaluate(
+    () =>
+      document.querySelectorAll('script[type="application/ld+json"]').length,
+  );
+  if (dsBlocks !== 0)
+    problems.push(`design-system: ${dsBlocks} ld+json blocks, expected none`);
+
+  log(
+    `structured data: ${publicRoutes.length} graphs parse, Organization + WebSite + page entity, 6 services, no location or rating claims`,
+  );
+  await context.close();
+}
+
 /* --- stills at every width the brief asks to be reviewed --- */
 for (const [route, name, stillWidths] of [
   ["/", "home", [360, 390, 768, 1024, 1280, 1440]],

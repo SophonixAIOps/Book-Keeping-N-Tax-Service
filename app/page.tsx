@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HomeHero } from "@/components/home/home-hero";
 import { TrustStrip } from "@/components/home/trust-strip";
 import { ServicesOverview } from "@/components/home/services-overview";
@@ -6,11 +7,22 @@ import { WhyClearLedger } from "@/components/home/why-clearledger";
 import { ProcessSection } from "@/components/home/process-section";
 import { ClientPerspectives } from "@/components/home/client-perspectives";
 import { CTASection } from "@/components/sections/cta-section";
+import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
+import { canonicalFor, pageSeo } from "@/lib/seo";
+import { pageGraph } from "@/lib/schema";
+
+/* No `title`: the root `default` is already the brand-led form this page wants,
+   so it stays a genuine site-wide fallback rather than being restated here. */
+export const metadata: Metadata = {
+  description: pageSeo["/"].description,
+  alternates: canonicalFor("/"),
+};
 
 export default function HomePage() {
   return (
     <>
+      <JsonLd data={pageGraph("/")} />
       <HomeHero />
       <TrustStrip />
       <ServicesOverview />

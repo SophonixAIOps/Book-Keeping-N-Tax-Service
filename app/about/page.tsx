@@ -7,17 +7,20 @@ import { AboutApproach } from "@/components/about/about-approach";
 import { AboutAudience } from "@/components/about/about-audience";
 import { AboutExperience } from "@/components/about/about-experience";
 import { AboutPrinciples } from "@/components/about/about-principles";
+import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
+import { canonicalFor, pageSeo } from "@/lib/seo";
+import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
-  title: "About",
-  description:
-    "Why ClearLedger exists, how the practice approaches accounting, who the work is built for, and what to expect from working together.",
+  ...pageSeo["/about"],
+  alternates: canonicalFor("/about"),
 };
 
 export default function AboutPage() {
   return (
     <>
+      <JsonLd data={pageGraph("/about")} />
       <PageHero
         eyebrow="About ClearLedger"
         title="Built to Give Business Owners Peace of Mind."

@@ -17,8 +17,8 @@ const steps = [
   },
   {
     number: "03",
-    title: "Discuss the Next Step",
-    body: "We can use the information you provide to understand the conversation you need to have next.",
+    title: "Add Any Context That Helps",
+    body: "Your current records, your timing, or anything else that would be useful for us to know.",
   },
 ];
 
@@ -36,9 +36,9 @@ export function ContactConsultation() {
               Start With a Conversation
             </Heading>
             <Text className="mt-5" measure>
-              Every business has a different financial starting point. Share a
-              few details about your situation and what you are looking for, and
-              we can start the conversation from there.
+              Every business has a different financial starting point. The form
+              asks for a few details about your situation and what you are
+              looking for — nothing you need to prepare in advance.
             </Text>
 
             {/* Numerals sit inline with the title here. The same three-part

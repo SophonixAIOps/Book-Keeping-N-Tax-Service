@@ -84,8 +84,26 @@ export const contact = {
     { days: "Monday – Thursday", time: "9:00am – 5:00pm" },
     { days: "Friday", time: "9:00am – 3:00pm" },
   ],
-  /** Established in a later phase — intentionally not invented here. */
-  serviceArea: "Service area to be confirmed",
+} as const;
+
+/**
+ * Geography for ClearLedger. Every field is `null` because none of it is
+ * verified: there is no office, no registered service area and no Google
+ * Business Profile behind this demo.
+ *
+ * The shape exists so a real location can be filled in later without touching
+ * the components that read it. Anything consuming this must render nothing
+ * when a field is null rather than printing a placeholder — an unconfirmed
+ * service area shown to a visitor reads as a real, if vague, claim.
+ */
+export const location = {
+  streetAddress: null,
+  locality: null,
+  region: null,
+  postalCode: null,
+  country: null,
+  serviceArea: null,
+  googleBusinessProfileUrl: null,
 } as const;
 
 export const cta = {

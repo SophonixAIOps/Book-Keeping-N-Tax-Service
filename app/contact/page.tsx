@@ -6,17 +6,20 @@ import { ButtonLink } from "@/components/ui/button";
 import { Heading, Text } from "@/components/ui/typography";
 import { ContactConsultation } from "@/components/contact/contact-consultation";
 import { ContactNextSteps } from "@/components/contact/contact-next-steps";
+import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
+import { canonicalFor, pageSeo } from "@/lib/seo";
+import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
-  title: "Contact",
-  description:
-    "Request a consultation with ClearLedger. Share a few details about your business and the bookkeeping, tax, payroll or reporting support you are considering.",
+  ...pageSeo["/contact"],
+  alternates: canonicalFor("/contact"),
 };
 
 export default function ContactPage() {
   return (
     <>
+      <JsonLd data={pageGraph("/contact")} />
       <PageHero
         eyebrow="Contact ClearLedger"
         title="Let’s Get Your Finances Organized."
@@ -38,8 +41,8 @@ export default function ContactPage() {
               </Heading>
               <Text size="lg" measure className="mt-4">
                 That’s okay. You do not need to have everything figured out
-                before reaching out. Tell us what is happening in your business,
-                and the conversation can start there.
+                before reaching out. If it helps to see what we handle first,
+                the services page sets out each area in detail.
               </Text>
             </div>
             <ButtonLink

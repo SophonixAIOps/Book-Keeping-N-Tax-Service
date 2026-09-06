@@ -108,9 +108,9 @@ export function SiteFooter() {
               ))}
             </dl>
 
-            <p className="mt-6 text-caption text-ink-inverse/50">
-              {contact.serviceArea}
-            </p>
+            {/* No service-area line: `location.serviceArea` is null until a
+                real one exists, and an unconfirmed one printed here reads as a
+                vague claim rather than an absent fact. */}
           </div>
         </div>
 

@@ -10,17 +10,20 @@ import {
   PayrollSummary,
   QuarterlyReport,
 } from "@/components/services/service-visuals";
+import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
+import { canonicalFor, pageSeo } from "@/lib/seo";
+import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
-  title: "Services",
-  description:
-    "Monthly bookkeeping, tax preparation, payroll support, business accounting, financial reporting and catch-up bookkeeping for small businesses and individuals.",
+  ...pageSeo["/services"],
+  alternates: canonicalFor("/services"),
 };
 
 export default function ServicesPage() {
   return (
     <>
+      <JsonLd data={pageGraph("/services")} />
       <PageHero
         eyebrow="Services"
         title="Accounting Support Built Around Your Business."

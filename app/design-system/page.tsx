@@ -467,7 +467,7 @@ export default function DesignSystemPage() {
           <Field
             label="Email address"
             htmlFor="ds-email"
-            hint="We reply within one business day."
+            hint="Used only to reply to your enquiry."
             className="md:col-span-2"
           >
             <Input

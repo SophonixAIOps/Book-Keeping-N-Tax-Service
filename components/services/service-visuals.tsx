@@ -132,6 +132,78 @@ export function PayrollSummary() {
   );
 }
 
+/* Money out in parentheses again, and the arithmetic actually resolves:
+   96,400 − 61,250 = 35,150. A statement whose total does not add up would
+   undercut the one thing an accounting site has to demonstrate. */
+const position = [
+  { label: "Revenue", amount: "$96,400" },
+  { label: "Less — operating expenses", amount: "($61,250)" },
+];
+
+/** 04 — a month resolved down to one figure, and what that figure is for.
+    This is the section whose copy promises "a financial picture an owner can
+    actually read and use when making decisions", so the visual carries the
+    movement all the way to the decision rather than stopping at the total. */
+export function AccountPosition() {
+  return (
+    <figure>
+      <VisualLabel>Illustrative position — March</VisualLabel>
+
+      <table className="mt-6 w-full border-collapse text-left">
+        <caption className="sr-only">
+          An example of how one month&rsquo;s revenue and operating expenses
+          resolve into a cash position.
+        </caption>
+        <tbody>
+          {position.map((row) => (
+            <tr key={row.label} className="border-b border-border">
+              <th
+                scope="row"
+                className="py-3 pr-4 text-left align-baseline text-body-sm font-normal text-ink-secondary"
+              >
+                {row.label}
+              </th>
+              <td className="numeric py-3 text-right align-baseline text-body-sm text-ink">
+                {row.amount}
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <th
+              scope="row"
+              className="border-t border-border-strong py-4 pr-4 text-left align-baseline text-body-sm font-medium text-ink"
+            >
+              Cash position
+            </th>
+            <td className="numeric border-t border-border-strong py-4 text-right align-baseline font-serif text-h3 text-ink">
+              $35,150
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* The last step of the movement is a decision, not a figure — so it is
+          set as text and connected by a rule rather than given a fake number. */}
+      <div className="mt-7 flex items-start gap-4">
+        <span
+          aria-hidden="true"
+          className="mt-1.5 block h-10 w-px shrink-0 bg-border-strong"
+        />
+        <div>
+          <p className="text-eyebrow uppercase text-ink-tertiary">
+            What that figure informs
+          </p>
+          <p className="mt-2 text-body-sm text-ink-secondary">
+            Whether to hire, when to invest, and what can wait.
+          </p>
+        </div>
+      </div>
+
+      <IllustrativeNote className="mt-6" />
+    </figure>
+  );
+}
+
 const quarter = [
   { month: "July", revenue: "$26,900", expenses: "$14,200", net: "$12,700" },
   { month: "August", revenue: "$29,450", expenses: "$15,780", net: "$13,670" },
@@ -221,7 +293,7 @@ export function RecordsState() {
             {asFound.map((width, i) => (
               <li
                 key={i}
-                className="h-[3px] bg-border-strong"
+                className="h-0.75 bg-border-strong"
                 style={{ width: `${width}%` }}
               />
             ))}
@@ -237,7 +309,7 @@ export function RecordsState() {
             {brought.map((width, i) => (
               <li
                 key={i}
-                className="h-[3px] bg-accent/35"
+                className="h-0.75 bg-accent/35"
                 style={{ width: `${width}%` }}
               />
             ))}

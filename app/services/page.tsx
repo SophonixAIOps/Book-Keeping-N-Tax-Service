@@ -8,6 +8,7 @@ import {
   LedgerExtract,
   YearEndFile,
   PayrollSummary,
+  AccountPosition,
   QuarterlyReport,
 } from "@/components/services/service-visuals";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -60,7 +61,12 @@ export default function ServicesPage() {
         visualSide="end"
       />
 
-      <ServiceSection id="business-accounting" tone="accentSoft" layout="open" />
+      <ServiceSection
+        id="business-accounting"
+        tone="accentSoft"
+        layout="open"
+        visual={<AccountPosition />}
+      />
 
       <ServiceSection
         id="financial-reporting"

@@ -141,9 +141,22 @@ export function ServiceSection({
         className="scroll-mt-24"
       >
         <Container>
-          <div className="max-w-narrow">
-            {intro}
-            <AudienceTags items={detail.audience} className="mt-7" />
+          {/* The open layout keeps its full-width band below, but pairs the
+              intro with a figure when one is supplied — otherwise the right
+              half of the section is simply empty above the band. */}
+          <div
+            className={cn(
+              visual ? "grid gap-12 lg:grid-cols-12 lg:gap-16" : undefined,
+            )}
+          >
+            <div className={visual ? "lg:col-span-6" : "max-w-narrow"}>
+              {intro}
+              <AudienceTags items={detail.audience} className="mt-7" />
+            </div>
+
+            {visual && (
+              <Reveal className="lg:col-span-5 lg:col-start-8">{visual}</Reveal>
+            )}
           </div>
 
           <Reveal>

@@ -75,27 +75,30 @@ export function ContactConsultation() {
 
           <div className="lg:col-span-5 lg:col-start-1 lg:row-start-2">
             <h3 className="text-h3 text-ink">Prefer to Reach Out Directly?</h3>
-            <dl className="mt-5 flex flex-col gap-4">
-              <div>
+            {/* Ruled rows rather than a gapped stack: every other label/value
+                list on the site is set this way, and it reads as the standing
+                details panel on a statement. */}
+            <dl className="mt-5 border-t border-border-strong">
+              <div className="border-b border-border py-4">
                 <dt className="text-eyebrow uppercase text-ink-tertiary">
                   Phone
                 </dt>
-                <dd className="numeric mt-1 text-body text-ink">
+                <dd className="numeric mt-1.5 text-body text-ink">
                   {contact.phone}
                 </dd>
               </div>
-              <div>
+              <div className="border-b border-border py-4">
                 <dt className="text-eyebrow uppercase text-ink-tertiary">
                   Email
                 </dt>
-                <dd className="mt-1 text-body text-ink">{contact.email}</dd>
+                <dd className="mt-1.5 text-body text-ink">{contact.email}</dd>
               </div>
-              <div>
+              <div className="border-b border-border py-4">
                 <dt className="text-eyebrow uppercase text-ink-tertiary">
                   Office hours
                 </dt>
                 {contact.hours.map((entry) => (
-                  <dd key={entry.days} className="mt-1 text-body text-ink">
+                  <dd key={entry.days} className="mt-1.5 text-body text-ink">
                     {entry.days}
                     <span className="numeric text-ink-tertiary">
                       {" "}

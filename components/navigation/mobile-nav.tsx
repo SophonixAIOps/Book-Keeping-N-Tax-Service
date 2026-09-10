@@ -47,10 +47,15 @@ export function MobileNav() {
         {open ? <CloseIcon size={22} /> : <MenuIcon size={22} />}
       </button>
 
+      {/* Entrance only. The panel is removed from the DOM on close so its links
+          never sit in the tab order while hidden, which also means there is no
+          element left to animate out — dismissal is immediate by design.
+          `starting:` degrades to today's instant appearance where
+          @starting-style is unsupported. */}
       {open && (
         <div
           id="mobile-nav-panel"
-          className="absolute inset-x-0 top-full border-b border-border bg-canvas md:hidden"
+          className="absolute inset-x-0 top-full border-b border-border bg-canvas transition-[opacity,translate] [transition-duration:var(--duration-base)] [transition-timing-function:var(--ease-out-soft)] starting:-translate-y-1 starting:opacity-0 md:hidden"
         >
           <nav aria-label="Mobile" className="gutter mx-auto max-w-page py-6">
             <ul className="flex flex-col">

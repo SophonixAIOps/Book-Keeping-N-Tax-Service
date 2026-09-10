@@ -37,32 +37,35 @@ export function ContactNextSteps() {
           </Text>
         </div>
 
-        <Reveal>
-          {/* Each stage hangs off its own heavy rule, like the column headings
-              on a printed statement. */}
-          {/* Subgrid so the numeral, title and body of all three stages share
-              rows — the third title wraps to two lines and would otherwise
-              drop its body text below the others. */}
-          <ol className="mt-14 grid gap-x-8 gap-y-10 md:grid-cols-3 md:grid-rows-[auto_auto_auto]">
-            {stages.map((stage) => (
-              <li
-                key={stage.number}
-                className="border-t border-border-strong pt-6 md:row-span-3 md:grid md:grid-rows-subgrid md:gap-y-0"
+        {/* Each stage hangs off its own heavy rule, like the column headings
+            on a printed statement. */}
+        {/* Subgrid so the numeral, title and body of all three stages share
+            rows — the third title wraps to two lines and would otherwise
+            drop its body text below the others. */}
+        {/* The stages reveal in order rather than as one block: at md they are
+            side by side and arrive together, so the stagger is what carries
+            01 → 02 → 03. */}
+        <ol className="mt-14 grid gap-x-8 gap-y-10 md:grid-cols-3 md:grid-rows-[auto_auto_auto]">
+          {stages.map((stage, index) => (
+            <Reveal
+              as="li"
+              delay={index * 70}
+              key={stage.number}
+              className="border-t border-border-strong pt-6 md:row-span-3 md:grid md:grid-rows-subgrid md:gap-y-0"
+            >
+              <span
+                aria-hidden="true"
+                className="numeric font-serif text-h2 leading-none text-ink-tertiary"
               >
-                <span
-                  aria-hidden="true"
-                  className="numeric font-serif text-h2 leading-none text-ink-tertiary"
-                >
-                  {stage.number}
-                </span>
-                <h3 className="mt-4 text-h3 text-ink">{stage.title}</h3>
-                <Text size="sm" className="mt-2">
-                  {stage.body}
-                </Text>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
+                {stage.number}
+              </span>
+              <h3 className="mt-4 text-h3 text-ink">{stage.title}</h3>
+              <Text size="sm" className="mt-2">
+                {stage.body}
+              </Text>
+            </Reveal>
+          ))}
+        </ol>
       </Container>
     </Section>
   );

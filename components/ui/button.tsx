@@ -2,11 +2,20 @@ import type { ComponentProps, ComponentPropsWithoutRef } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
+/* The 1px lift and press are deliberately near the threshold of perception:
+   enough that the control answers the pointer, small enough that a page of
+   them never reads as floating UI. `disabled:` variants are doubled up on
+   `hover`/`active` so they win on specificity rather than source order. */
 const base =
   "inline-flex items-center justify-center gap-2 rounded-md text-button font-medium " +
-  "border transition-[background-color,border-color,color] " +
+  /* `translate`, not `transform`: Tailwind v4 emits translate utilities as the
+     standalone `translate` property, so transitioning `transform` would leave
+     the lift snapping instead of easing. */
+  "border transition-[background-color,border-color,color,translate] " +
   "[transition-duration:var(--duration-fast)] [transition-timing-function:var(--ease-out-soft)] " +
-  "disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink disabled:border-transparent";
+  "hover:-translate-y-px active:translate-y-px " +
+  "disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink disabled:border-transparent " +
+  "disabled:hover:translate-y-0 disabled:active:translate-y-0";
 
 const variants = {
   primary:

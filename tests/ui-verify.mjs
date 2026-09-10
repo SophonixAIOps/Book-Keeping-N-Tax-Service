@@ -96,6 +96,13 @@ log(`breakpoint sweep: ${routes.length * widths.length} route/width combinations
   if ((await toggle.getAttribute("aria-label")) !== "Close menu")
     problems.push("mobile: open label wrong");
 
+  /* The panel has an entrance transition, so its box is still moving for the
+     first frames. This assertion is about where the panel comes to rest, not
+     where it starts — wait for the animation to finish rather than racing it. */
+  await panel.evaluate((node) =>
+    Promise.all(node.getAnimations().map((a) => a.finished)),
+  );
+
   const panelBox = await panel.boundingBox();
   const headerBox = await page.locator("header").boundingBox();
   if (Math.abs(panelBox.y - (headerBox.y + headerBox.height)) > 1)

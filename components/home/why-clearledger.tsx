@@ -38,8 +38,10 @@ export function WhyClearLedger() {
       <Container>
         <div className="max-w-narrow">
           <Eyebrow>Why ClearLedger</Eyebrow>
+          {/* Not "Built to give business owners peace of mind." — that line is
+              the About page's H1 and should stay singular to it. */}
           <Heading as="h2" className="mt-4 text-ink">
-            Built to give business owners peace of mind.
+            What consistent accounting support looks like.
           </Heading>
         </div>
 

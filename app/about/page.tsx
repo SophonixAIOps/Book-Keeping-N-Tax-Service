@@ -36,11 +36,11 @@ export default function AboutPage() {
       <AboutExperience />
       <AboutPrinciples />
 
+      {/* Worded off the homepage's "Let’s Make Your Finances Easier." and off
+          the Contact page's "Start With a Conversation" — this page should not
+          close on a line the visitor has already read elsewhere. */}
       <CTASection
-        // The brief suggested "Let’s Make Your Finances Easier." — the homepage
-        // already closes on that exact line, so this one is worded differently
-        // rather than repeating the site's closing heading verbatim.
-        heading="Let's Make Your Finances Easier."
+        heading="A Clearer Place to Begin."
         description="If you’re looking for a more organized way to manage your financial records, let’s start with a conversation about what your business needs."
         action={cta.primary}
         secondaryAction={cta.secondary}

@@ -75,11 +75,12 @@ export const services = [
 
 export type ServiceId = (typeof services)[number]["id"];
 
+/* No `tel:`/`mailto:` counterparts: the number is a reserved fictional range
+   and the address sits on a `.example` domain, so neither can receive
+   anything. They are displayed as reference, never as a live channel. */
 export const contact = {
   phone: "(555) 0100",
-  phoneHref: "tel:+15550100",
   email: "hello@clearledger.example",
-  emailHref: "mailto:hello@clearledger.example",
   hours: [
     { days: "Monday – Thursday", time: "9:00am – 5:00pm" },
     { days: "Friday", time: "9:00am – 3:00pm" },

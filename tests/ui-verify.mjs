@@ -219,6 +219,41 @@ for (const [width, expected] of [
   await context.close();
 }
 
+/* --- the footer's closing prompt must not point at the page you are on --- */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  for (const [route, expected] of [
+    ["/", true],
+    ["/services", true],
+    ["/about", true],
+    ["/contact", false],
+  ]) {
+    await page.goto(BASE + route, { waitUntil: "networkidle" });
+    // scoped to the closing row's heading: the footer nav always carries a
+    // plain "Contact" link, which is navigation rather than a CTA
+    const present =
+      (await page
+        .getByRole("heading", { name: /Ready to get your books in order/ })
+        .count()) > 0;
+    if (present !== expected)
+      problems.push(
+        `footer @${route}: closing prompt ${present ? "present" : "absent"}, expected ${expected ? "present" : "absent"}`,
+      );
+
+    // placeholder contact details must be listed, never offered as live channels
+    const deadChannels = await page
+      .locator("footer a[href^='tel:'], footer a[href^='mailto:']")
+      .count();
+    if (deadChannels > 0)
+      problems.push(
+        `footer @${route}: ${deadChannels} tel:/mailto: links to placeholder contacts`,
+      );
+  }
+  log("footer closing: suppressed on /contact, no tel:/mailto: placeholders");
+  await context.close();
+}
+
 /* --- hero CTAs stack full width and keep their touch target --- */
 {
   const context = await browser.newContext({ viewport: { width: 360, height: 900 } });
@@ -368,9 +403,16 @@ for (const [width, expected] of [
     if (levels[i] - levels[i - 1] > 1)
       problems.push(`services: heading jumps h${levels[i - 1]} -> h${levels[i]}`);
 
+  // hero + index + 5 service sections + catch-up + one closing band
   const sections = await page.locator("main > section").count();
-  if (sections !== 10)
-    problems.push(`services: ${sections} sections, expected 10`);
+  if (sections !== 9) problems.push(`services: ${sections} sections, expected 9`);
+
+  // the page must close on exactly one consultation band, not a stack
+  const closingBands = await page
+    .getByRole("heading", { level: 2, name: /Not Sure Where to Start|Finances Organized/ })
+    .count();
+  if (closingBands !== 1)
+    problems.push(`services: ${closingBands} closing CTA bands, expected 1`);
 
   // each of the six services must be an addressable, labelled landmark
   const ids = [

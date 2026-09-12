@@ -77,22 +77,17 @@ export default function ServicesPage() {
 
       <ServiceCatchUp />
 
+      {/* The page's single closing band. Someone who has read six service
+          sections and still cannot place their own situation is the visitor
+          this page most needs to catch, so the uncertain path — not a second
+          generic prompt — is what carries the accent treatment. */}
       <CTASection
         heading="Not Sure Where to Start?"
         description="You don’t need to figure out the right accounting service on your own. Tell us where things stand, and we’ll help you understand what kind of support makes sense for your business."
         action={cta.primary}
-        tone="canvas"
+        tone="accent"
         spacing="lg"
         align="center"
-      />
-
-      <CTASection
-        heading="Let’s Get Your Finances Organized."
-        description="Whether you need ongoing bookkeeping, tax preparation, or help bringing your records back up to date, let’s talk about what your business needs."
-        // Distinct wording from the section directly above it, which already
-        // uses the site's "Schedule a Consultation" primary.
-        action={{ label: "Get in Touch", href: cta.primary.href }}
-        tone="accent"
       />
     </>
   );

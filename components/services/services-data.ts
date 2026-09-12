@@ -12,6 +12,11 @@ export type ServiceDetail = {
   audience: string[];
   coverage: string[];
   benefits: string[];
+  /** Always "Discuss <this service>". One shared verb so no service reads as
+      a stronger offer than its neighbours, and the service named so the link
+      still stands on its own out of context. Never an outcome ("Get Your
+      Books Back on Track") — the point is to decide whether the service
+      fits, which is not something the link can promise. */
   cta: string;
   /** Optional honesty guard rendered under the coverage list. */
   note?: string;
@@ -41,7 +46,7 @@ export const serviceDetails: Record<ServiceId, ServiceDetail> = {
       "Better visibility into the business",
       "Easier preparation for tax and reporting",
     ],
-    cta: "Talk About Monthly Bookkeeping",
+    cta: "Discuss Monthly Bookkeeping",
   },
 
   "tax-preparation": {
@@ -93,7 +98,7 @@ export const serviceDetails: Record<ServiceId, ServiceDetail> = {
       "Less time spent locating information",
       "A clearer view of what staffing costs",
     ],
-    cta: "Talk About Payroll Support",
+    cta: "Discuss Payroll Support",
     note: "ClearLedger supports payroll record-keeping and bookkeeping. It does not operate as a payroll provider.",
   },
 
@@ -115,7 +120,7 @@ export const serviceDetails: Record<ServiceId, ServiceDetail> = {
       "Regular review rather than year-end surprises",
       "Financial information that is easier to use",
     ],
-    cta: "Discuss Your Business Needs",
+    cta: "Discuss Business Accounting",
   },
 
   "financial-reporting": {
@@ -155,7 +160,7 @@ export const serviceDetails: Record<ServiceId, ServiceDetail> = {
       "A defined path back to current",
       "A foundation for ongoing bookkeeping",
     ],
-    cta: "Get Your Books Back on Track",
+    cta: "Discuss Catch-Up Bookkeeping",
     note: "Every set of books is different, so scope is reviewed together before any work begins rather than promised against a fixed timeline.",
   },
 };

@@ -196,7 +196,7 @@ export function ConsultationForm() {
       <Field
         label="Message"
         htmlFor="inquiry-message"
-        hint="Where things stand today, and what you are looking for help with."
+        hint="Where things stand today, and what you are looking for help with. Please don’t include account numbers, passwords or other sensitive financial details."
         error={errors.message}
         className="sm:col-span-2"
       >

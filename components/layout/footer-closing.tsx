@@ -24,12 +24,12 @@ export function FooterClosing() {
       </Heading>
       <Link
         href={cta.primary.href}
-        className="group inline-flex shrink-0 items-center gap-2 text-body-sm text-ink-inverse/75 transition-colors [transition-duration:var(--duration-fast)] hover:text-ink-inverse"
+        className="group inline-flex shrink-0 items-center gap-2 text-body-sm text-ink-inverse/75 transition-colors duration-(--duration-fast) hover:text-ink-inverse"
       >
         {cta.primary.label}
         <ArrowRightIcon
           size={16}
-          className="transition-transform [transition-duration:var(--duration-fast)] group-hover:translate-x-1"
+          className="transition-transform duration-(--duration-fast) group-hover:translate-x-1"
         />
       </Link>
     </div>

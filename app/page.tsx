@@ -9,13 +9,14 @@ import { ClientPerspectives } from "@/components/home/client-perspectives";
 import { CTASection } from "@/components/sections/cta-section";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
-import { canonicalFor, pageSeo } from "@/lib/seo";
+import { canonicalFor, pageSeo, socialFor } from "@/lib/seo";
 import { pageGraph } from "@/lib/schema";
 
 /* No `title`: the root `default` is already the brand-led form this page wants,
    so it stays a genuine site-wide fallback rather than being restated here. */
 export const metadata: Metadata = {
   description: pageSeo["/"].description,
+  ...socialFor("/"),
   alternates: canonicalFor("/"),
 };
 

@@ -13,11 +13,12 @@ import {
 } from "@/components/services/service-visuals";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
-import { canonicalFor, pageSeo } from "@/lib/seo";
+import { canonicalFor, pageSeo, socialFor } from "@/lib/seo";
 import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
   ...pageSeo["/services"],
+  ...socialFor("/services"),
   alternates: canonicalFor("/services"),
 };
 

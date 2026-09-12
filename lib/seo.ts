@@ -65,3 +65,31 @@ export const pageSeo = {
 } as const;
 
 export type PagePath = keyof typeof pageSeo;
+
+/**
+ * Open Graph and Twitter metadata for a route, built from the same title and
+ * description the page already publishes, so a shared link cannot describe the
+ * page differently from its `<meta>` tags.
+ *
+ * No `images`: there is no social asset, and a card pointing at a missing file
+ * is worse than one without art. No `locale`: the tag expects a
+ * language_TERRITORY pair, and ClearLedger claims no territory.
+ *
+ * `url` is emitted only once an origin is configured, for the same reason
+ * `canonicalFor` withholds a canonical — a localhost URL in shared markup is an
+ * actively wrong signal.
+ */
+export function socialFor(path: PagePath): Metadata {
+  const { title, description } = pageSeo[path];
+
+  return {
+    openGraph: {
+      type: "website",
+      siteName: siteConfig.legalName,
+      title,
+      description,
+      ...(siteUrl ? { url: absoluteUrl(path) } : {}),
+    },
+    twitter: { card: "summary", title, description },
+  };
+}

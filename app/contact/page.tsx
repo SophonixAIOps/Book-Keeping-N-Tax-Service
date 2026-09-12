@@ -8,11 +8,12 @@ import { ContactConsultation } from "@/components/contact/contact-consultation";
 import { ContactNextSteps } from "@/components/contact/contact-next-steps";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
-import { canonicalFor, pageSeo } from "@/lib/seo";
+import { canonicalFor, pageSeo, socialFor } from "@/lib/seo";
 import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
   ...pageSeo["/contact"],
+  ...socialFor("/contact"),
   alternates: canonicalFor("/contact"),
 };
 

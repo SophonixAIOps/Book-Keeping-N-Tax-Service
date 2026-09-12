@@ -630,6 +630,22 @@ for (const [width, expected] of [
   if (impliesDelivery)
     problems.push(`contact: confirmation implies delivery :: ${confirmation}`);
 
+  // Both halves of this swap replace the element holding focus. If focus is
+  // allowed to fall back to <body>, a keyboard user is silently returned to
+  // the top of the document and a screen reader announces nothing.
+  const afterSubmit = await page.evaluate(() =>
+    document.activeElement?.getAttribute("role"),
+  );
+  if (afterSubmit !== "status")
+    problems.push(`contact: focus after submit is role="${afterSubmit}", expected status`);
+
+  await page.getByRole("button", { name: /return to the form/i }).click();
+  await page.waitForSelector("#inquiry-name");
+  const afterReturn = await page.evaluate(() => document.activeElement?.id);
+  if (afterReturn !== "inquiry-name")
+    problems.push(`contact: focus after returning to the form is ${afterReturn}`);
+  log("contact focus: retained across both directions of the demo-state swap");
+
   await page.reload({ waitUntil: "networkidle" });
 
   const hrefs = await page.evaluate(() =>
@@ -810,6 +826,23 @@ log("contact form: one column under sm, full-width fields, form ahead of direct 
         "",
       h1s: [...document.querySelectorAll("h1")].map((h) => h.innerText.trim()),
       bodyText: document.body.innerText,
+      social: Object.fromEntries(
+        [
+          "og:title",
+          "og:description",
+          "og:type",
+          "og:site_name",
+          "og:url",
+          "twitter:card",
+          "twitter:title",
+          "twitter:description",
+        ].map((key) => [
+          key,
+          document
+            .querySelector(`meta[property="${key}"], meta[name="${key}"]`)
+            ?.getAttribute("content") ?? "",
+        ]),
+      ),
     }));
 
     if (!meta.title) problems.push(`${route}: no title`);
@@ -831,6 +864,29 @@ log("contact form: one column under sm, full-width fields, form ahead of direct 
     // to a localhost canonical — that would be an actively wrong signal.
     if (meta.canonical && /localhost|127\.0\.0\.1/.test(meta.canonical))
       problems.push(`${route}: canonical points at ${meta.canonical}`);
+
+    // A shared link must not describe the page differently from its own
+    // <meta>, so these are asserted against the tags the page already
+    // publishes rather than against literals.
+    for (const [key, expected] of [
+      ["og:description", meta.description],
+      ["twitter:description", meta.description],
+      ["og:type", "website"],
+      ["twitter:card", "summary"],
+    ])
+      if (meta.social[key] !== expected)
+        problems.push(
+          `${route}: ${key} is "${meta.social[key]}", expected "${expected}"`,
+        );
+    for (const key of ["og:title", "og:site_name", "twitter:title"])
+      if (!meta.social[key]) problems.push(`${route}: no ${key}`);
+
+    // og:url travels with the shared link, so it is withheld for the same
+    // reason as the canonical: a localhost URL is worse than none.
+    if (meta.social["og:url"] && !meta.canonical)
+      problems.push(`${route}: og:url set to ${meta.social["og:url"]} with no canonical`);
+    if (/localhost|127\.0\.0\.1/.test(meta.social["og:url"]))
+      problems.push(`${route}: og:url points at ${meta.social["og:url"]}`);
 
     if (titles.has(meta.title))
       problems.push(
@@ -869,6 +925,7 @@ log("contact form: one column under sm, full-width fields, form ahead of direct 
   log(
     `metadata: ${publicRoutes.length} public routes, unique titles and descriptions, 1 h1 each`,
   );
+  log("social: og + twitter on every public route, no localhost og:url");
 
   // the specimen route must stay out of search
   await page.goto(BASE + "/design-system", { waitUntil: "networkidle" });

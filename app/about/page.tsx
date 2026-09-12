@@ -9,11 +9,12 @@ import { AboutExperience } from "@/components/about/about-experience";
 import { AboutPrinciples } from "@/components/about/about-principles";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cta } from "@/lib/site-config";
-import { canonicalFor, pageSeo } from "@/lib/seo";
+import { canonicalFor, pageSeo, socialFor } from "@/lib/seo";
 import { pageGraph } from "@/lib/schema";
 
 export const metadata: Metadata = {
   ...pageSeo["/about"],
+  ...socialFor("/about"),
   alternates: canonicalFor("/about"),
 };
 

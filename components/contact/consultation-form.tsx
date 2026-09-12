@@ -48,12 +48,26 @@ export function ConsultationForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
   const focusTarget = useRef<ErrorKey | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const returning = useRef(false);
 
   useEffect(() => {
     if (!focusTarget.current) return;
     document.getElementById(`inquiry-${focusTarget.current}`)?.focus();
     focusTarget.current = null;
   }, [errors]);
+
+  /* Both directions of this swap replace the element holding focus, which
+     would otherwise drop the caret back to `body` and send a keyboard user to
+     the top of the document. The guard keeps the initial render untouched. */
+  useEffect(() => {
+    if (submitted) {
+      statusRef.current?.focus();
+    } else if (returning.current) {
+      returning.current = false;
+      document.getElementById("inquiry-name")?.focus();
+    }
+  }, [submitted]);
 
   const clearError = (key: ErrorKey) =>
     setErrors((current) =>
@@ -91,7 +105,7 @@ export function ConsultationForm() {
 
   if (submitted) {
     return (
-      <div role="status" className="mt-6">
+      <div role="status" tabIndex={-1} ref={statusRef} className="mt-6">
         <Text className="text-ink">This form is a demonstration.</Text>
         <Text size="sm" className="mt-3">
           Your details were checked for completeness but not submitted.
@@ -101,7 +115,10 @@ export function ConsultationForm() {
         <Button
           variant="secondary"
           className="mt-7"
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            returning.current = true;
+            setSubmitted(false);
+          }}
         >
           Return to the form
         </Button>

@@ -96,7 +96,7 @@ export const serviceDetails: Record<ServiceId, ServiceDetail> = {
       "Payroll records kept current",
       "Payroll costs reflected in the books",
       "Less time spent locating information",
-      "A clearer view of what staffing costs",
+      "A clearer view of staffing costs",
     ],
     cta: "Discuss Payroll Support",
     note: "ClearLedger supports payroll record-keeping and bookkeeping. It does not operate as a payroll provider.",

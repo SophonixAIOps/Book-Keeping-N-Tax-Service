@@ -358,6 +358,15 @@
     animation-play-state: paused;
   }
 
+  /* Same gate for a chart with no `.reveal` above it — the hero. Without it the
+     sweep runs in the first style pass and is spent before the page is on
+     screen; the flag is set on mount, once there is someone to see it.
+     Both fallbacks below clear `clip-path`, so a client that never mounts the
+     flag still gets the finished chart rather than an empty box. */
+  .spark-gate:not([data-spark-ready="true"]) .spark-chart {
+    animation-play-state: paused;
+  }
+
   /* Both fallbacks drop to the resting state: fully shown, no animation.
      Without this the paused rule above would hold the chart clipped away —
      invisible — on any client that never flips `data-revealed`. */

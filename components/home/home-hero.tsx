@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Heading, Text } from "@/components/ui/typography";
 import { LedgerLines } from "@/components/financial/ledger-lines";
 import { StatementRow } from "@/components/financial/statement-row";
-import { SparkLine } from "@/components/financial/spark-line";
+import { HeroSparkLine } from "@/components/home/hero-spark-line";
 import { IllustrativeNote } from "@/components/financial/illustrative-note";
 import { cta } from "@/lib/site-config";
 
@@ -83,7 +83,7 @@ function ReportPanel() {
       </div>
 
       <div className="border-t border-border px-6 py-6">
-        <SparkLine data={trend} height={72} />
+        <HeroSparkLine data={trend} height={72} />
         <p className="mt-3 text-caption text-ink-tertiary">
           Twelve months of recorded activity
         </p>

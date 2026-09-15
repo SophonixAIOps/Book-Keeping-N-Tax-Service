@@ -332,4 +332,46 @@
       transform: none;
     }
   }
+
+  /* Trend line reveal. A stroke-dash draw is the obvious approach but it fights
+     `vector-effect: non-scaling-stroke`: Chromium applies dashes in screen space
+     while `pathLength` normalises in user space, so the line truncates by the
+     SVG's scale factor and the truncation shifts on resize. Clipping the chart
+     sidesteps that, and sweeping line and wash together keeps the wash from
+     arriving ahead of the line that is meant to describe it. */
+  @keyframes spark-wipe {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .spark-chart {
+    animation: spark-wipe var(--duration-reveal) var(--ease-out-soft) both;
+  }
+
+  /* Held until the surrounding block reveals, so the chart sweeps in as it
+     arrives rather than finishing somewhere below the fold. */
+  .reveal:not([data-revealed="true"]) .spark-chart {
+    animation-play-state: paused;
+  }
+
+  /* Both fallbacks drop to the resting state: fully shown, no animation.
+     Without this the paused rule above would hold the chart clipped away —
+     invisible — on any client that never flips `data-revealed`. */
+  @media (prefers-reduced-motion: reduce) {
+    .spark-chart {
+      animation: none;
+      clip-path: none;
+    }
+  }
+
+  @media (scripting: none) {
+    .spark-chart {
+      animation: none;
+      clip-path: none;
+    }
+  }
 }

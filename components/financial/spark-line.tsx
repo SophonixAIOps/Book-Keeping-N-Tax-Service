@@ -35,7 +35,7 @@ export function SparkLine({
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className={cn("h-auto w-full overflow-visible", className)}
+      className={cn("spark-chart h-auto w-full overflow-visible", className)}
       aria-hidden="true"
       focusable="false"
     >
